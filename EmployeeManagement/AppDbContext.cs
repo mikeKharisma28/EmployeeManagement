@@ -26,6 +26,14 @@ namespace EmployeeManagement
         {
             base.OnModelCreating(builder);
 
+            var softDeleteEntities = typeof(ISoftDelete).Assembly.GetTypes()
+                .Where(x => typeof(ISoftDelete).IsAssignableFrom(x) && x.IsClass && x.BaseType == null);
+
+            foreach (var entity in softDeleteEntities)
+            {
+                builder.Entity(entity).HasQueryFilter(GenerateQueryFilterLambda(entity));
+            }
+
             builder.Entity<AppUser>().ToTable("AppUsers");
             builder.Entity<IdentityRole>().ToTable("AppRoles");
             builder.Entity<IdentityUserRole<string>>().ToTable("AppUserRoles");
@@ -41,14 +49,6 @@ namespace EmployeeManagement
             foreach(var foreignKey in cascadeFKs)
             {
                 foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
-            }
-
-            var softDeleteEntities = typeof(ISoftDelete).Assembly.GetTypes()
-                .Where(x => typeof(ISoftDelete).IsAssignableFrom(x) && x.IsClass && x.BaseType == null);
-
-            foreach (var entity in softDeleteEntities)
-            {
-                builder.Entity(entity).HasQueryFilter(GenerateQueryFilterLambda(entity));
             }
         }
 
@@ -84,6 +84,8 @@ namespace EmployeeManagement
                     var track = entity as IBaseModel;
                     track.UpdatedDate = DateTime.Now;
                     track.UpdatedBy = _userResolverServices.GetUserName();
+
+                    var origin = Entry(entity).OriginalValues;
                 }
             }
 

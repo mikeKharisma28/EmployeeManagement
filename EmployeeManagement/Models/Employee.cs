@@ -15,9 +15,11 @@ namespace EmployeeManagement.Models
 
         public string? PhoneNumber { get; set; }
 
+        public string PhotoUrl { get; set; }
+
         [ForeignKey("PositionId")]
         public Guid PositionId { get; set; }
-
-        public Position Position { get; set; }
+        
+        public virtual Position Position { get; set; }
     }
 }
