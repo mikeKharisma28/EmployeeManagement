@@ -9,10 +9,12 @@ using EmployeeManagement;
 using EmployeeManagement.Models;
 using EmployeeManagement.DTOs.Position;
 using EmployeeManagement.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EmployeeManagement.Controllers
 {
-    [Route("api/[controller]")]
+    //[Authorize(Policy = "SuperAdminPolicy")]
+    [Route("api/position")]
     [ApiController]
     public class PositionsController : ControllerBase
     {

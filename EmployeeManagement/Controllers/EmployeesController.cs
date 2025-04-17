@@ -7,12 +7,13 @@ using EmployeeManagement.DTOs.Employee;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using EmployeeManagement.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EmployeeManagement.Controllers
 {
-    [Route("api/[controller]")]
+    
+    [Route("api/employee")]
     [ApiController]
-
     public class EmployeesController : ControllerBase
     {
         private readonly AppDbContext _context;

@@ -12,22 +12,18 @@ using System.Text;
 
 namespace EmployeeManagement.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/account")]
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly AppDbContext _dbContext;
         private readonly UserManager<AppUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly IUserAccountServices _userAccountServices;
 
-        public AccountController(AppDbContext dbContext, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, IUserAccountServices userAccountServices)
+        public AccountController(UserManager<AppUser> userManager, IConfiguration configuration, IUserAccountServices userAccountServices)
         {
-            _dbContext = dbContext;
             _configuration = configuration;
             _userManager = userManager;
-            _roleManager = roleManager;
             _userAccountServices = userAccountServices;
         }
 
@@ -72,35 +68,6 @@ namespace EmployeeManagement.Controllers
             }
 
             return Unauthorized();
-        }
-
-        [HttpPost("add-role")]
-        public async Task<IActionResult> AddRole([FromBody] string role)
-        {
-            if (!await _roleManager.RoleExistsAsync(role))
-            {
-                var result = await _roleManager.CreateAsync(new AppRole(role));
-                if (result.Succeeded)
-                {
-                    return Ok(new { message = "Role added successfully" });
-                }
-
-                return BadRequest(result.Errors);
-            }
-
-            return BadRequest("Role already exists");
-        }
-
-        [HttpPost("assign-role")]
-        public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto model)
-        {
-            var isSucceeded = await _userAccountServices.AssignUserRole(model.Username, model.RoleName);
-            if (isSucceeded)
-            {
-                return Ok(new { message = "Role assigned successfully" });
-            }
-
-            return BadRequest();
         }
     }
 }
