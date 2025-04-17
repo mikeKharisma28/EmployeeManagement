@@ -39,6 +39,7 @@ namespace EmployeeManagement
 
             builder.Services.AddTransient<UserResolverServices>();
             builder.Services.AddScoped<IUserAccountServices, UserAccountServices>();
+            builder.Services.AddScoped<ExternalAPIServices>();
 
             builder.Services.AddAuthorization();
             builder.Services.AddAuthentication().AddCookie();

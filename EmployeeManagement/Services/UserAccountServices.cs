@@ -1,4 +1,5 @@
 ﻿using EmployeeManagement.DTOs.Account;
+using EmployeeManagement.DTOs.Employee;
 using EmployeeManagement.Models;
 using Microsoft.AspNetCore.Identity;
 
@@ -16,6 +17,26 @@ namespace EmployeeManagement.Services
         }
 
         public async Task<bool> Register(RegisterDto insertEmployeeDto)
+        {
+            var user = new AppUser()
+            {
+                UserName = insertEmployeeDto.Email,
+                Email = insertEmployeeDto.Email,
+                EmployeeNumber = insertEmployeeDto.EmployeeNumber
+            };
+            var result = await _userManager.CreateAsync(user, insertEmployeeDto.Password);
+
+            if (result.Succeeded)
+            {
+                return result.Succeeded;
+            }
+            else
+            {
+                throw new Exception(result.Errors.ToString());
+            }
+        }
+
+        public async Task<bool> Register(InsertDto insertEmployeeDto)
         {
             var user = new AppUser()
             {

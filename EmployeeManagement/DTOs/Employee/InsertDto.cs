@@ -14,7 +14,7 @@ namespace EmployeeManagement.DTOs.Employee
 
         public Guid PositionId { get; set; }
 
-        public IFormFile filePhoto { get; set; }
+        public IFormFile FilePhoto { get; set; }
 
         // AppUser section
         public string? Email { get; set; }

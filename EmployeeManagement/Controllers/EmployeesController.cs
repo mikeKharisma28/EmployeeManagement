@@ -6,6 +6,7 @@ using EmployeeManagement.Models;
 using EmployeeManagement.DTOs.Employee;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
+using EmployeeManagement.Services;
 
 namespace EmployeeManagement.Controllers
 {
@@ -16,11 +17,15 @@ namespace EmployeeManagement.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IDistributedCache _cache;
+        private readonly IUserAccountServices _userAccountServices;
+        private readonly ExternalAPIServices _externalAPIServices;
 
-        public EmployeesController(AppDbContext context, IDistributedCache cache)
+        public EmployeesController(AppDbContext context, IDistributedCache cache, IUserAccountServices userAccountServices, ExternalAPIServices externalAPIServices)
         {
             _context = context;
             _cache = cache;
+            _userAccountServices = userAccountServices;
+            _externalAPIServices = externalAPIServices;
         }
 
         // GET: api/Employees
@@ -106,24 +111,33 @@ namespace EmployeeManagement.Controllers
         [HttpPost]
         public async Task<ActionResult<Employee>> PostEmployee(InsertDto insertEmployeeDto)
         {
-            var employee = new Employee();
+            try
+            {
+                var employee = new Employee();
 
-            employee.FullName = insertEmployeeDto.FullName;
-            employee.EmployeeNumber = insertEmployeeDto.EmployeeNumber;
-            employee.PhoneNumber = insertEmployeeDto.PhoneNumber;
-            employee.Address = insertEmployeeDto.Address;
-            employee.PositionId = insertEmployeeDto.PositionId;
+                employee.FullName = insertEmployeeDto.FullName;
+                employee.EmployeeNumber = insertEmployeeDto.EmployeeNumber;
+                employee.PhoneNumber = insertEmployeeDto.PhoneNumber;
+                employee.Address = insertEmployeeDto.Address;
+                employee.PositionId = insertEmployeeDto.PositionId;
 
-            // upload image
-            employee.PhotoUrl = "";
+                // upload image
+                var urlResult = await _externalAPIServices.UploadImage(insertEmployeeDto.FilePhoto);
+                employee.PhotoUrl = urlResult;
 
-            // add user data
+                // add user data
+                var isSucceeded = await _userAccountServices.Register(insertEmployeeDto);
 
+                _context.Employees.Add(employee);
+                await _context.SaveChangesAsync();
 
-            _context.Employees.Add(employee);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetEmployee", new { id = employee.Id }, employee);
+                return CreatedAtAction("GetEmployee", new { id = employee.Id }, employee);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // DELETE: api/Employees/5
