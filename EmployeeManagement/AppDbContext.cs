@@ -15,6 +15,7 @@ namespace EmployeeManagement
         public AppDbContext(DbContextOptions options, UserResolverServices userResolverServices) : base(options)
         {
             _userResolverServices = userResolverServices;
+            
         }
 
         public DbSet<Employee> Employees { get; set; }
@@ -27,7 +28,7 @@ namespace EmployeeManagement
             base.OnModelCreating(builder);
 
             var softDeleteEntities = typeof(ISoftDelete).Assembly.GetTypes()
-                .Where(x => typeof(ISoftDelete).IsAssignableFrom(x) && x.IsClass && x.BaseType == null);
+                .Where(x => typeof(ISoftDelete).IsAssignableFrom(x) && x.IsClass && x.BaseType == typeof(BaseModel));
 
             foreach (var entity in softDeleteEntities)
             {
@@ -124,6 +125,8 @@ namespace EmployeeManagement
                     var track = entity as IBaseModel;
                     track.UpdatedDate = DateTime.Now;
                     track.UpdatedBy = _userResolverServices.GetUserName();
+
+                    var origin = Entry(entity).OriginalValues;
                 }
             }
             return base.SaveChangesAsync(cancellationToken);
@@ -134,8 +137,9 @@ namespace EmployeeManagement
             var parameter = Expression.Parameter(type, "x");
             var falseConstantValue = Expression.Constant(false);
             var propertyAccess = Expression.PropertyOrField(parameter, nameof(ISoftDelete.IsDeleted));
-            var isFalseExpression = Expression.IsFalse(propertyAccess);
-            var lambda = Expression.Lambda(isFalseExpression, parameter);
+            //var isFalseExpression = Expression.IsFalse(propertyAccess);
+            var equalExpression = Expression.Equal(propertyAccess, falseConstantValue);
+            var lambda = Expression.Lambda(equalExpression, parameter);
 
             return lambda;
         }

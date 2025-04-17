@@ -1,6 +1,6 @@
 ﻿namespace EmployeeManagement.DTOs.Position
 {
-    public class AddDto
+    public class ViewDto
     {
         public string Name { get; set; }
 

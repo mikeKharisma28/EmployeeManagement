@@ -17,6 +17,7 @@ namespace EmployeeManagement.Models
 
         public string PhotoUrl { get; set; }
 
+        [Required]
         [ForeignKey("PositionId")]
         public Guid PositionId { get; set; }
         

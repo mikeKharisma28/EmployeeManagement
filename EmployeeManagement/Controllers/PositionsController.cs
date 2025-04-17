@@ -25,31 +25,49 @@ namespace EmployeeManagement.Controllers
 
         // GET: api/Positions
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Position>>> GetPositions()
+        public async Task<ActionResult<IEnumerable<ViewDto>>> GetPositions()
         {
-            return await _context.Positions.ToListAsync();
+            List<ViewDto> positionsDto = new List<ViewDto>();
+            var existingData = await _context.Positions.ToListAsync();
+            foreach (var position in existingData)
+            {
+                ViewDto positionDto = new ViewDto();
+                positionDto.Name = position.Name;
+                positionDto.Description = position.Description;
+                positionDto.IsActive = position.IsActive;
+                positionsDto.Add(positionDto);
+            }
+
+            return positionsDto;
         }
 
         // GET: api/Positions/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Position>> GetPosition(Guid id)
+        public async Task<ActionResult<ViewDto>> GetPosition(Guid id)
         {
-            var position = await _context.Positions.FindAsync(id);
+            var position = await _context.Positions.Where(x => x.Id == id).FirstOrDefaultAsync();
 
             if (position == null)
             {
                 return NotFound();
             }
+            else
+            {
+                ViewDto positionDto = new ViewDto();
+                positionDto.Name = position.Name;
+                positionDto.Description = position.Description;
+                positionDto.IsActive = position.IsActive;
 
-            return position;
+                return positionDto;
+            }
         }
 
         // PUT: api/Positions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPosition(Guid id, EditDto positionEditDto)
+        public async Task<IActionResult> PutPosition(Guid id, UpdateDto updatePositionDto)
         {
-            var existing = await _context.Positions.FindAsync(id);
+            var existing = await _context.Positions.Where(x => x.Id == id).FirstOrDefaultAsync();
             if (existing == null)
             {
                 return NotFound();
@@ -58,9 +76,9 @@ namespace EmployeeManagement.Controllers
             {
                 //_context.Entry(existing).State = EntityState.Modified;
 
-                existing.Name = positionEditDto.Name;
-                existing.Description = positionEditDto.Description;
-                existing.IsActive = positionEditDto.IsActive;
+                existing.Name = updatePositionDto.Name;
+                existing.Description = updatePositionDto.Description;
+                existing.IsActive = updatePositionDto.IsActive;
 
                 try
                 {
@@ -86,12 +104,12 @@ namespace EmployeeManagement.Controllers
         // POST: api/Positions
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Position>> PostPosition(AddDto positionAddDto)
+        public async Task<ActionResult<Position>> PostPosition(InsertDto insertPositionDto)
         {
             var position = new Position();
-            position.Name = positionAddDto.Name;
-            position.Description = positionAddDto.Description;
-            position.IsActive = positionAddDto.IsActive;
+            position.Name = insertPositionDto.Name;
+            position.Description = insertPositionDto.Description;
+            position.IsActive = insertPositionDto.IsActive;
 
             _context.Positions.Add(position);
             await _context.SaveChangesAsync();
@@ -108,11 +126,13 @@ namespace EmployeeManagement.Controllers
             {
                 return NotFound();
             }
+            else
+            {
+                _context.SoftDelete(position);
+                await _context.SaveChangesAsync();
 
-            _context.SoftDelete(position);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+                return NoContent();
+            }
         }
 
         private bool PositionExists(Guid id)

@@ -1,24 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using EmployeeManagement;
 using EmployeeManagement.Models;
+using EmployeeManagement.DTOs.Employee;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 
 namespace EmployeeManagement.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class EmployeesController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IDistributedCache _cache;
 
-        public EmployeesController(AppDbContext context)
+        public EmployeesController(AppDbContext context, IDistributedCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         // GET: api/Employees
@@ -32,52 +34,92 @@ namespace EmployeeManagement.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Employee>> GetEmployee(Guid id)
         {
-            var employee = await _context.Employees.FindAsync(id);
-
-            if (employee == null)
+            string cacheKey = $"Employee_{id}";
+            var cachedItem = await _cache.GetStringAsync(cacheKey);
+            if (cachedItem != null)
             {
-                return NotFound();
+                Console.WriteLine(cachedItem);
+                return JsonConvert.DeserializeObject<Employee>(cachedItem);
             }
-
-            return employee;
-        }
-
-        // PUT: api/Employees/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutEmployee(Guid id, Employee employee)
-        {
-            if (id != employee.Id)
+            else
             {
-                return BadRequest();
-            }
+                var employee = await _context.Employees.Where(x => x.Id == id).FirstOrDefaultAsync();
 
-            _context.Entry(employee).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EmployeeExists(id))
+                if (employee == null)
                 {
                     return NotFound();
                 }
                 else
                 {
-                    throw;
+                    await _cache.SetStringAsync(cacheKey,
+                        JsonConvert.SerializeObject(employee),
+                        new DistributedCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5), // remove data after a fixed time
+                            SlidingExpiration = TimeSpan.FromMinutes(2) // reset expiration every time data is accessed
+                        });
                 }
-            }
 
-            return NoContent();
+                return employee;
+            }
+        }
+
+        // PUT: api/Employees/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutEmployee(Guid id, UpdateDto updateEmployeeDto)
+        {
+            var existing = await _context.Employees.Where(x => x.Id == id).FirstOrDefaultAsync();
+            if (existing == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                try
+                {
+                    existing.FullName = updateEmployeeDto.FullName;
+                    existing.EmployeeNumber = updateEmployeeDto.EmployeeNumber;
+                    existing.PhoneNumber = updateEmployeeDto.PhoneNumber;
+                    existing.Address = updateEmployeeDto.Address;
+                    existing.PositionId = updateEmployeeDto.PositionId;
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!EmployeeExists(id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
+                return NoContent();
+            }
         }
 
         // POST: api/Employees
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
+        public async Task<ActionResult<Employee>> PostEmployee(InsertDto insertEmployeeDto)
         {
+            var employee = new Employee();
+
+            employee.FullName = insertEmployeeDto.FullName;
+            employee.EmployeeNumber = insertEmployeeDto.EmployeeNumber;
+            employee.PhoneNumber = insertEmployeeDto.PhoneNumber;
+            employee.Address = insertEmployeeDto.Address;
+            employee.PositionId = insertEmployeeDto.PositionId;
+
+            // upload image
+            employee.PhotoUrl = "";
+
+            // add user data
+
+
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
 
