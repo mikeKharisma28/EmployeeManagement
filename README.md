@@ -10,7 +10,4 @@
    ![image](https://github.com/user-attachments/assets/cb1767e8-0b59-453e-a643-99ab4556b4ad)
 10. Execute command Update-Database to migrate to your database
 11. This project is provided with api/account/register and api/account/login. 
-12. There are 3 roles, Admin, Approver 1 and Approver 2. Before testing, make sure you have registered users with these roles.
-13. Role Admin has access to updating vehicle data and input the transaction. After a transaction is submitted, the data will need to be approved by Approver 1 and 2.
-14. Role Approver 1 & 2 has access to approving the transaction data. Once approve / reject, the task will not be present in the list anymore.
-15. Hence, the project is ready to be tested. 
+12. Hence, the project is ready to be tested. 
