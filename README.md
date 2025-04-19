@@ -9,5 +9,5 @@
 9. Then open Package Manager Console
    ![image](https://github.com/user-attachments/assets/cb1767e8-0b59-453e-a643-99ab4556b4ad)
 10. Execute command Update-Database to migrate to your database
-11. This project is provided with api/account/register and api/account/login. 
+11. This project is provided with api/account/register and api/account/login, can be used to create and authorize first-time user.
 12. Hence, the project is ready to be tested. 
